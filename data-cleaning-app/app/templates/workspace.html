@@ -1,0 +1,313 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Interactive Data Workspace</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body>
+    <div class="container-fluid mt-4">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h1 class="mb-0">Data Workspace</h1>
+            <a href="{{ url_for('main.index') }}" class="btn btn-outline-secondary"><i class="bi bi-upload"></i> Upload
+                New
+                File</a>
+        </div>
+
+        <div class="row g-4">
+            <div class="col-lg-5">
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <h3 class="card-title"><i class="bi bi-tools"></i> Perform New Operation</h3>
+                        <form method="post">
+                            <div class="mb-3">
+                                <label for="base_checkpoint" class="form-label fw-bold">1. Select Checkpoint to View or
+                                    Build From:</label>
+                                <select name="base_checkpoint" id="base_checkpoint" class="form-select">
+                                    {% for cp in checkpoints %}
+                                    <option value="{{ cp.filename }}" {% if loop.last %}selected{% endif %}>{{ cp.name
+                                        }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <p class="fw-bold">2. Choose Operations to Apply:</p>
+                            <div class="accordion" id="operationsAccordion">
+
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header"><button class="accordion-button collapsed"
+                                            type="button" data-bs-toggle="collapse" data-bs-target="#collapseDrop">A.
+                                            Drop Columns</button></h2>
+                                    <div id="collapseDrop" class="accordion-collapse collapse"
+                                        data-bs-parent="#operationsAccordion">
+                                        <div class="accordion-body">
+                                            <div class="scrollable-options" id="drop-columns-list">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header"><button class="accordion-button collapsed"
+                                            type="button" data-bs-toggle="collapse" data-bs-target="#collapseNA">B.
+                                            Handle Missing Values</button></h2>
+                                    <div id="collapseNA" class="accordion-collapse collapse"
+                                        data-bs-parent="#operationsAccordion">
+                                        <div class="accordion-body">
+                                            <label class="form-label">Select columns for NA handling:</label>
+                                            <div class="scrollable-options mb-2" id="na-columns-list">
+                                            </div>
+                                            <label for="na_action" class="form-label">Action:</label>
+                                            <select name="na_action" id="na_action" class="form-select">
+                                                <option value="">-- Select Action --</option>
+                                                <option value="drop_rows">Drop rows if NA</option>
+                                                <option value="fill_mean">Fill with Mean</option>
+                                                <option value="fill_median">Fill with Median</option>
+                                                <option value="fill_mode">Fill with Mode</option>
+                                                <option value="fill_custom">Fill with Custom Value</option>
+                                            </select>
+                                            <input type="text" name="na_custom_value" class="form-control mt-2"
+                                                placeholder="Enter custom value...">
+                                        </div>
+                                    </div>
+                                </div>
+
+
+                                <!-- C. Change Data Types (Combined) -->
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header"><button class="accordion-button collapsed"
+                                            type="button" data-bs-toggle="collapse" data-bs-target="#collapseType">C.
+                                            Change Data Types</button></h2>
+                                    <div id="collapseType" class="accordion-collapse collapse"
+                                        data-bs-parent="#operationsAccordion">
+                                        <div class="accordion-body">
+                                            <label class="form-label">Select columns to convert:</label>
+                                            <div class="scrollable-options mb-2" id="type-columns-list">
+                                                <!-- Checkboxes will be populated by JavaScript -->
+                                            </div>
+                                            <label for="new_type" class="form-label">New Type:</label>
+                                            <select name="new_type" id="new_type" class="form-select">
+                                                <option value="">-- Select Type --</option>
+                                                <option value="string">String (Text)</option>
+                                                <option value="Int64">Integer (Whole Number)</option>
+                                                <option value="float64">Float (Decimal)</option>
+                                                <option value="datetime64[ns]">Datetime</option>
+                                                <option value="category">Category</option>
+                                            </select>
+
+                                            <div id="rounding-options-container" class="mt-3 border-top pt-3 d-none">
+                                                <label for="rounding_method"
+                                                    class="form-label fw-bold text-warning">Rounding Required for Float
+                                                    to Integer</label>
+                                                <p class="text-muted small">To convert a float to an integer, you must
+                                                    choose how to handle decimals.</p>
+                                                <select name="rounding_method" id="rounding_method" class="form-select">
+                                                    <option value="">-- Select Rounding Method --</option>
+                                                    <option value="round">Round to nearest whole number (e.g., 45.5 ->
+                                                        46)</option>
+                                                    <option value="floor">Round down (floor) (e.g., 45.9 -> 45)</option>
+                                                    <option value="ceil">Round up (ceiling) (e.g., 45.1 -> 46)</option>
+                                                </select>
+                                            </div>
+
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header"><button class="accordion-button collapsed"
+                                            type="button" data-bs-toggle="collapse" data-bs-target="#collapseStr">D.
+                                            String Manipulation</button></h2>
+                                    <div id="collapseStr" class="accordion-collapse collapse"
+                                        data-bs-parent="#operationsAccordion">
+                                        <div class="accordion-body">
+                                            <label class="form-label">Select text/categorical columns to
+                                                transform:</label>
+                                            <div class="scrollable-options mb-2" id="str-columns-list">
+                                            </div>
+                                            <select name="str_case" class="form-select mb-2">
+                                                <option value="">-- Change Case (optional) --</option>
+                                                <option value="lower">lower case</option>
+                                                <option value="upper">UPPER CASE</option>
+                                                <option value="title">Title Case</option>
+                                            </select>
+                                            <div class="form-check mb-2">
+                                                <input class="form-check-input" type="checkbox" name="str_strip"
+                                                    value="true" id="str_strip">
+                                                <label class="form-check-label" for="str_strip">Trim leading/trailing
+                                                    whitespace</label>
+                                            </div>
+                                            <label class="form-label small">Find & Replace (optional):</label>
+                                            <div class="input-group">
+                                                <input type="text" name="str_find" class="form-control"
+                                                    placeholder="Find this...">
+                                                <input type="text" name="str_replace" class="form-control"
+                                                    placeholder="Replace with this...">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header"><button class="accordion-button collapsed"
+                                            type="button" data-bs-toggle="collapse" data-bs-target="#collapseFeat">E.
+                                            Feature Engineering</button></h2>
+                                    <div id="collapseFeat" class="accordion-collapse collapse"
+                                        data-bs-parent="#operationsAccordion">
+                                        <div class="accordion-body">
+                                            <p class="mb-2"><strong>Numeric Scaling (creates new columns)</strong></p>
+                                            <label class="form-label small">Select numeric columns to scale:</label>
+                                            <div class="scrollable-options mb-2" id="scale-columns-list">
+                                            </div>
+                                            <select name="scaler_type" class="form-select mb-3">
+                                                <option value="">-- Select Scaler --</option>
+                                                <option value="standard">Standard Scaler (Z-score)</option>
+                                                <option value="minmax">Min-Max Scaler (0-1)</option>
+                                            </select>
+
+                                            <hr>
+
+                                            <p class="mb-2"><strong>Date Extraction (creates new columns)</strong></p>
+                                            <label class="form-label small">Select datetime columns:</label>
+                                            <div class="scrollable-options mb-2" id="date-columns-list">
+                                            </div>
+                                            <label class="form-label small">Parts to Extract:</label>
+                                            <div>
+                                                <div class="form-check form-check-inline">
+                                                    <input class="form-check-input" type="checkbox" name="date_parts"
+                                                        value="year" id="part_year">
+                                                    <label class="form-check-label small" for="part_year">Year</label>
+                                                </div>
+                                                <div class="form-check form-check-inline">
+                                                    <input class="form-check-input" type="checkbox" name="date_parts"
+                                                        value="month" id="part_month">
+                                                    <label class="form-check-label small" for="part_month">Month</label>
+                                                </div>
+                                                <div class="form-check form-check-inline">
+                                                    <input class="form-check-input" type="checkbox" name="date_parts"
+                                                        value="day" id="part_day">
+                                                    <label class="form-check-label small" for="part_day">Day</label>
+                                                </div>
+                                                <div class="form-check form-check-inline">
+                                                    <input class="form-check-input" type="checkbox" name="date_parts"
+                                                        value="dayofweek" id="part_dayofweek">
+                                                    <label class="form-check-label small" for="part_dayofweek">Day of
+                                                        Week</label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header"><button class="accordion-button collapsed"
+                                            type="button" data-bs-toggle="collapse" data-bs-target="#collapseEnc">F.
+                                            Categorical Encoding</button></h2>
+                                    <div id="collapseEnc" class="accordion-collapse collapse"
+                                        data-bs-parent="#operationsAccordion">
+                                        <div class="accordion-body">
+                                            <label class="form-label">Select categorical columns to encode:</label>
+                                            <div class="scrollable-options mb-2" id="encode-columns-list">
+                                            </div>
+                                            <select name="encoding_method" class="form-select">
+                                                <option value="">-- Select Method --</option>
+                                                <option value="one_hot">One-Hot Encoding (creates new columns, drops
+                                                    original)</option>
+                                                <option value="label">Label Encoding (creates new `_encoded` columns)
+                                                </option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mt-3">
+                                <label for="checkpoint_name" class="form-label fw-bold">3. Name this new checkpoint
+                                    (optional):</label>
+                                <input type="text" name="checkpoint_name" id="checkpoint_name" class="form-control"
+                                    placeholder="e.g., 'NA Values Handled'">
+                            </div>
+
+                            <div class="d-grid mt-4">
+                                <button type="submit" class="btn btn-success btn-lg"><i
+                                        class="bi bi-gear-wide-connected"></i> Process & Create Checkpoint</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="card shadow-sm mt-4">
+                    <div class="card-body">
+                        <h3 class="card-title"><i class="bi bi-journal-check"></i> Checkpoint History</h3>
+                        <ul class="list-group list-group-flush">
+                            {% for cp in checkpoints %}<li
+                                class="list-group-item d-flex justify-content-between align-items-center">{{ cp.name }}
+                                <a href="{{ url_for('main.download_file', filename=cp.filename) }}"
+                                    class="btn btn-sm btn-outline-primary"><i class="bi bi-download"></i> Download</a>
+                            </li>{% endfor %}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-7">
+                <div id="loading-spinner" class="d-none text-center p-5">
+                    <div class="spinner-border text-primary" role="status"><span
+                            class="visually-hidden">Loading...</span></div>
+                    <p class="mt-2">Loading Checkpoint Data...</p>
+                </div>
+                <div id="results-container">
+                    <div class="card shadow-sm mb-4">
+                        <div class="card-body">
+                            <h3 class="card-title"><i class="bi bi-clipboard-data"></i> Profile for: <span
+                                    id="checkpoint-name-display" class="text-primary">{{ initial_data.name }}</span>
+                            </h3>
+                            <div class="accordion" id="profilingAccordion">
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header"><button class="accordion-button collapsed"
+                                            type="button" data-bs-toggle="collapse"
+                                            data-bs-target="#collapsePreview">Data Preview</button></h2>
+                                    <div id="collapsePreview" class="accordion-collapse collapse"
+                                        data-bs-parent="#profilingAccordion">
+                                        <div id="preview-html-container" class="accordion-body table-responsive">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header"><button class="accordion-button collapsed"
+                                            type="button" data-bs-toggle="collapse"
+                                            data-bs-target="#collapseInfo">Column Info</button></h2>
+                                    <div id="collapseInfo" class="accordion-collapse collapse"
+                                        data-bs-parent="#profilingAccordion">
+                                        <div class="accordion-body">
+                                            <pre id="info-html-container"></pre>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card shadow-sm">
+                        <div class="card-body">
+                            <h3 class="card-title"><i class="bi bi-file-earmark-code"></i> Cumulative Code</h3>
+                            <div class="position-relative">
+                                <pre><code id="code-block">{{ initial_data.full_code }}</code></pre>
+                                <button id="copy-btn" class="btn btn-sm btn-secondary copy-btn"><i
+                                        class="bi bi-clipboard"></i> Copy</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+
+</html>
